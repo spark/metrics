@@ -62,8 +62,8 @@ module.exports =
 
     @defaultParams: ->
       v: 1
-      tid: "UA-3769691-33"
+      tid: "UA-37038200-9"
       cid: atom.config.get('metrics.userId')
-      an: 'atom'
+      an: 'sparkdev'
       av: atom.getVersion()
       sr: "#{screen.width}x#{screen.height}"
