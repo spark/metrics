@@ -1,17 +1,26 @@
-{$} = require 'atom'
 path = require 'path'
 querystring = require 'querystring'
 
-_ = require 'underscore-plus'
+extend = (target, propertyMaps...) ->
+  for propertyMap in propertyMaps
+    for key, value of propertyMap
+      target[key] = value
+  target
+
+post = (url) ->
+  xhr = new XMLHttpRequest()
+  xhr.open("POST", url)
+  xhr.send(null)
 
 module.exports =
   class Reporter
-    @sendEvent: (category, name, value) ->
+    @sendEvent: (category, action, label, value) ->
       params =
         t: 'event'
         ec: category
-        ea: name
-        ev: value
+        ea: action
+      params.el = label if label?
+      params.ev = value if value?
 
       @send(params)
 
@@ -21,6 +30,14 @@ module.exports =
         utc: category
         utv: name
         utt: value
+
+      @send(params)
+
+    @sendException: (description) ->
+      params =
+        t: 'exception'
+        exd: description
+        exf: if atom.inDevMode() then '0' else '1'
 
       @send(params)
 
@@ -51,19 +68,36 @@ module.exports =
         dt: item.getGrammar?()?.name
       @send(params)
 
-    @send: (params) ->
-      _.extend(params, @defaultParams())
-      @request
-        type: 'POST'
-        url: "https://www.google-analytics.com/collect?#{querystring.stringify(params)}"
+    @sendCommand: (commandName) ->
+      @commandCount ?= {}
+      @commandCount[commandName] ?= 0
+      @commandCount[commandName]++
 
-    @request: (options) ->
-      $.ajax(options) if navigator.onLine
+      params =
+        t: 'event'
+        ec: 'command'
+        ea: commandName.split(':')[0]
+        el: commandName
+        ev: @commandCount[commandName]
+
+      @send(params)
+
+    @send: (params) ->
+      extend(params, @defaultParams())
+      @request("https://www.google-analytics.com/collect?#{querystring.stringify(params)}")
+
+    @request: (url) ->
+      post(url) if navigator.onLine
 
     @defaultParams: ->
-      v: 1
-      tid: "UA-37038200-9"
-      cid: atom.config.get('metrics.userId')
-      an: 'sparkdev'
-      av: atom.getVersion()
-      sr: "#{screen.width}x#{screen.height}"
+      params = {}
+      params.cd1 = startDate if startDate = localStorage.getItem('metrics.sd')
+
+      # https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters
+      extend params,
+        v: 1
+        tid: "UA-37038200-9"
+        cid: localStorage.getItem('metrics.userId')
+        an: 'sparkdev'
+        av: atom.getVersion()
+        sr: "#{screen.width}x#{screen.height}"
