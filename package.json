@@ -3,7 +3,7 @@
   "main": "./lib/metrics",
   "version": "0.45.0",
   "description": "Reports usage information to Google Analytics",
-  "repository": "https://github.com/spark/metrics",
+  "repository": "https://github.com/particle-iot/metrics",
   "license": "MIT",
   "engines": {
     "atom": ">0.50.0"
